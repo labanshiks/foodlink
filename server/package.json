@@ -8,6 +8,8 @@
     "start": "node src/server.js",
     "db:check": "node scripts/check-database.js",
     "db:verify": "node scripts/verify-database.js",
+    "auth:smoke": "node scripts/smoke-auth-api.js",
+    "test": "node --test --test-concurrency=1",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
@@ -19,10 +21,13 @@
     "bcrypt": "6.0.0",
     "cors": "2.8.5",
     "dotenv": "16.4.7",
-    "express": "4.22.2"
+    "express": "4.22.2",
+    "express-validator": "7.3.2",
+    "jsonwebtoken": "9.0.2"
   },
   "devDependencies": {
-    "prisma": "5.22.0"
+    "prisma": "5.22.0",
+    "supertest": "7.1.4"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

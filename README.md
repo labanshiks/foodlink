@@ -1,6 +1,6 @@
 # FoodLink
 
-FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the Milestone 1 foundation and the Milestone 2 MySQL database schema, migration, and development seed data.
+FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the project foundation, MySQL database, and backend authentication and authorization completed through Milestone 3.
 
 ## Prerequisites
 
@@ -50,11 +50,13 @@ FLUSH PRIVILEGES;
 Edit `server/.env` and replace `change_me` in `DATABASE_URL` with the password you selected. URL-encode special characters used in the username or password. Also set the development administrator credentials:
 
 ```dotenv
+JWT_SECRET="replace_with_at_least_32_random_characters"
+JWT_EXPIRES_IN="1h"
 SEED_ADMIN_EMAIL="admin@foodlink.local"
 SEED_ADMIN_PASSWORD="replace_with_a_strong_development_password"
 ```
 
-The administrator password must contain at least 12 characters. Keep `server/.env` local and never commit it.
+Use a cryptographically random JWT secret containing at least 32 characters. The administrator password must contain at least 12 characters. Keep `server/.env` local and never commit it.
 
 Apply the existing migrations and seed the development data:
 
@@ -109,3 +111,54 @@ npm run db:verify
 Use `npx prisma migrate dev --name <migration_name>` when creating future development migrations. Prisma's development migration command requires permission to create a temporary shadow database; applying committed migrations with `prisma migrate deploy` does not.
 
 The seed is idempotent: it upserts the seven standard food categories and one active administrator. The administrator has no organisation, as required by the project specification.
+
+## Authentication API
+
+```text
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+GET  /api/auth/me
+```
+
+Registration accepts `DONOR` and `RECIPIENT` only and requires this JSON structure:
+
+```json
+{
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "email": "jane@example.com",
+  "phoneNumber": "+254700000000",
+  "password": "StrongPass123",
+  "role": "DONOR",
+  "organisationName": "Example Restaurant",
+  "organisationType": "Restaurant",
+  "organisationDescription": "Optional description",
+  "address": "Example Road",
+  "city": "Nairobi",
+  "organisationContactPhone": "+254700000001"
+}
+```
+
+Passwords must contain 8–72 characters, including an uppercase letter, lowercase letter, and number. Passwords are stored as bcrypt hashes using 12 rounds.
+
+Successful login returns a signed bearer token. Send it to protected endpoints as:
+
+```text
+Authorization: Bearer <token>
+```
+
+JWTs expire according to `JWT_EXPIRES_IN`, which defaults to one hour. Logout is stateless: the client removes its token, and the server does not maintain a token denylist.
+
+Run the authentication integration tests:
+
+```bash
+cd server
+npm test
+```
+
+With the API running, exercise login, current-user lookup, and logout over HTTP:
+
+```bash
+npm run auth:smoke
+```
