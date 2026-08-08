@@ -271,3 +271,24 @@ npm run reservation:smoke
 ```
 
 The reservation smoke script removes all temporary users, organisations, donations, and reservations after verification.
+
+## Role-based dashboard API
+
+All active authenticated roles use one endpoint:
+
+```text
+GET /api/dashboard
+```
+
+The API determines the dashboard from the authenticated user's role. Donor metrics are scoped to donations they own and reservation requests on those donations. Recipient metrics are scoped to their reservations. Administrator metrics aggregate platform users, organisations, donations, reservations, and categories.
+
+Expired available donations are derived with `status = AVAILABLE` and `expiresAt` earlier than the request time. Dashboard reporting never changes donation rows or introduces an `EXPIRED` status.
+
+With the API running, verify all three dashboard roles using temporary data:
+
+```bash
+cd server
+npm run dashboard:smoke
+```
+
+The dashboard smoke script removes its temporary users, organisations, donations, and reservations after verification.
