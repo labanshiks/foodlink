@@ -9,6 +9,7 @@
     "db:check": "node scripts/check-database.js",
     "db:verify": "node scripts/verify-database.js",
     "auth:smoke": "node scripts/smoke-auth-api.js",
+    "organisation:smoke": "node scripts/smoke-organisation-api.js",
     "test": "node --test --test-concurrency=1",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",

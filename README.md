@@ -1,6 +1,6 @@
 # FoodLink
 
-FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the project foundation, MySQL database, and backend authentication and authorization completed through Milestone 3.
+FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the project foundation, MySQL database, backend authentication and authorization, and organisation profiles completed through Milestone 4.
 
 ## Prerequisites
 
@@ -162,3 +162,36 @@ With the API running, exercise login, current-user lookup, and logout over HTTP:
 ```bash
 npm run auth:smoke
 ```
+
+## Organisation profile API
+
+Authenticated `DONOR` and `RECIPIENT` users can manage only the organisation linked to their account:
+
+```text
+GET /api/organisations/me
+PUT /api/organisations/me
+```
+
+The update endpoint requires this JSON structure:
+
+```json
+{
+  "name": "Example Restaurant",
+  "organisationType": "Restaurant",
+  "description": "Optional description or null",
+  "address": "Example Road",
+  "city": "Nairobi",
+  "contactPhone": "+254700000001"
+}
+```
+
+Ownership is always taken from the verified JWT user. Client-supplied `id`, `userId`, or `user_id` fields are ignored and cannot select another organisation. Administrators receive `403 Forbidden` because admin accounts do not have organisations.
+
+With the API running, exercise registration, login, organisation retrieval, and organisation update over HTTP:
+
+```bash
+cd server
+npm run organisation:smoke
+```
+
+The smoke script deletes its temporary donor and organisation records after verification.
