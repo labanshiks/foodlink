@@ -6,8 +6,13 @@ import {
   getDonation,
   getMyDonations,
   updateMyDonation,
+  markMyDonationCollected,
 } from '../controllers/donationController.js'
-import { authenticate, requireDonor } from '../middleware/authMiddleware.js'
+import {
+  createDonationReservation,
+  getDonationReservations,
+} from '../controllers/reservationController.js'
+import { authenticate, requireDonor, requireRecipient } from '../middleware/authMiddleware.js'
 import { validateRequest } from '../middleware/validateRequest.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import {
@@ -16,12 +21,33 @@ import {
   donationWriteValidator,
   rejectServerControlledDonationFields,
 } from '../validators/donationValidators.js'
+import {
+  rejectServerControlledReservationFields,
+  reservationCreateValidator,
+} from '../validators/reservationValidators.js'
 
 const router = Router()
 const donorOnly = [asyncHandler(authenticate), requireDonor]
+const recipientOnly = [asyncHandler(authenticate), requireRecipient]
 
 router.get('/', browseDonationsValidator, validateRequest, asyncHandler(browseDonations))
 router.get('/mine', donorOnly, asyncHandler(getMyDonations))
+router.get(
+  '/:id/reservations',
+  donorOnly,
+  donationIdValidator,
+  validateRequest,
+  asyncHandler(getDonationReservations),
+)
+router.post(
+  '/:id/reservations',
+  recipientOnly,
+  donationIdValidator,
+  rejectServerControlledReservationFields,
+  reservationCreateValidator,
+  validateRequest,
+  asyncHandler(createDonationReservation),
+)
 router.get('/:id', donationIdValidator, validateRequest, asyncHandler(getDonation))
 router.post(
   '/',
@@ -46,6 +72,13 @@ router.patch(
   donationIdValidator,
   validateRequest,
   asyncHandler(cancelMyDonation),
+)
+router.patch(
+  '/:id/collected',
+  donorOnly,
+  donationIdValidator,
+  validateRequest,
+  asyncHandler(markMyDonationCollected),
 )
 
 export default router

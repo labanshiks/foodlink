@@ -28,6 +28,8 @@ let availableMombasaId
 let otherDonorDonationId
 let expiredDonationId
 let cancelledDonationId
+let reservedDonationId
+let collectedDonationId
 let createdDonationId
 
 function futureIso(hours) {
@@ -218,6 +220,28 @@ describe('FoodLink donation API', { concurrency: false }, () => {
       status: DonationStatus.CANCELLED,
     })
     cancelledDonationId = cancelled.id
+
+    const reserved = await createFixture({
+      donorId,
+      categoryId: preparedCategoryId,
+      title: `M6 ${runId} Reserved Donation`,
+      city: 'Nairobi',
+      availableFrom,
+      expiresAt: new Date(now + 10 * oneHour),
+      status: DonationStatus.RESERVED,
+    })
+    reservedDonationId = reserved.id
+
+    const collected = await createFixture({
+      donorId,
+      categoryId: preparedCategoryId,
+      title: `M6 ${runId} Collected Donation`,
+      city: 'Nairobi',
+      availableFrom,
+      expiresAt: new Date(now + 10 * oneHour),
+      status: DonationStatus.COLLECTED,
+    })
+    collectedDonationId = collected.id
   })
 
   after(async () => {
@@ -473,7 +497,7 @@ describe('FoodLink donation API', { concurrency: false }, () => {
     assert.equal(ids.includes(otherDonorDonationId), false)
   })
 
-  test('DONOR updates their own donation', async () => {
+  test('AVAILABLE donation remains editable by its donor', async () => {
     const response = remember(await request(app)
       .put(`/api/donations/${createdDonationId}`)
       .set('Authorization', `Bearer ${donorToken}`)
@@ -485,6 +509,26 @@ describe('FoodLink donation API', { concurrency: false }, () => {
     assert.equal(response.status, 200)
     assert.equal(response.body.data.donation.title, `M5 ${runId} Updated API Donation`)
     assert.equal(response.body.data.donation.categoryId, bakeryCategoryId)
+  })
+
+  test('RESERVED donation cannot be edited', async () => {
+    const response = remember(await request(app)
+      .put(`/api/donations/${reservedDonationId}`)
+      .set('Authorization', `Bearer ${donorToken}`)
+      .send(donationPayload()))
+
+    assert.equal(response.status, 409)
+    assert.equal(response.body.error.code, 'DONATION_NOT_EDITABLE')
+  })
+
+  test('COLLECTED donation cannot be edited', async () => {
+    const response = remember(await request(app)
+      .put(`/api/donations/${collectedDonationId}`)
+      .set('Authorization', `Bearer ${donorToken}`)
+      .send(donationPayload()))
+
+    assert.equal(response.status, 409)
+    assert.equal(response.body.error.code, 'DONATION_NOT_EDITABLE')
   })
 
   test('DONOR cannot update another donor donation', async () => {

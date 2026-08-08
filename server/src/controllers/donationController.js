@@ -4,6 +4,7 @@ import {
   getPublicDonation,
   listDonorDonations,
   listPublicDonations,
+  markDonationCollected,
   updateDonation,
 } from '../services/donationService.js'
 
@@ -58,5 +59,14 @@ export async function cancelMyDonation(request, response) {
   return response.json({
     success: true,
     data: { donation },
+  })
+}
+
+export async function markMyDonationCollected(request, response) {
+  const result = await markDonationCollected(request.user.id, request.params.id)
+
+  return response.json({
+    success: true,
+    data: result,
   })
 }

@@ -1,4 +1,4 @@
-import { DonationStatus } from '@prisma/client'
+import { DonationStatus, Prisma, ReservationStatus } from '@prisma/client'
 import prisma from '../config/prisma.js'
 import { ApiError } from '../utils/apiError.js'
 
@@ -41,6 +41,18 @@ const donationSelect = {
       },
     },
   },
+}
+
+const collectionReservationSelect = {
+  id: true,
+  donationId: true,
+  recipientId: true,
+  message: true,
+  requestedCollectionTime: true,
+  status: true,
+  donorResponse: true,
+  createdAt: true,
+  updatedAt: true,
 }
 
 function donationNotFound() {
@@ -149,15 +161,27 @@ export async function updateDonation(donorId, donationId, input) {
       throw donationNotFound()
     }
 
-    if (existing.status === DonationStatus.CANCELLED) {
-      throw new ApiError(409, 'DONATION_NOT_EDITABLE', 'A cancelled donation cannot be edited.')
+    if (existing.status !== DonationStatus.AVAILABLE) {
+      throw new ApiError(409, 'DONATION_NOT_EDITABLE', 'Only an available donation can be edited.')
     }
 
     await requireActiveCategory(transaction, input.categoryId)
 
-    return transaction.donation.update({
-      where: { id: donationId },
+    const updated = await transaction.donation.updateMany({
+      where: {
+        id: donationId,
+        donorId,
+        status: DonationStatus.AVAILABLE,
+      },
       data: writableDonationData(input),
+    })
+
+    if (updated.count !== 1) {
+      throw new ApiError(409, 'DONATION_NOT_EDITABLE', 'Only an available donation can be edited.')
+    }
+
+    return transaction.donation.findUnique({
+      where: { id: donationId },
       select: donationSelect,
     })
   })
@@ -175,6 +199,14 @@ export async function cancelDonation(donorId, donationId) {
     }
 
     if (existing.status === DonationStatus.CANCELLED) {
+      await transaction.reservation.updateMany({
+        where: { donationId, status: ReservationStatus.PENDING },
+        data: {
+          status: ReservationStatus.REJECTED,
+          donorResponse: 'The donation was cancelled by the donor.',
+        },
+      })
+
       return transaction.donation.findUnique({
         where: { id: donationId },
         select: donationSelect,
@@ -185,10 +217,100 @@ export async function cancelDonation(donorId, donationId) {
       throw new ApiError(409, 'DONATION_NOT_CANCELLABLE', 'Only an available donation can be cancelled.')
     }
 
-    return transaction.donation.update({
-      where: { id: donationId },
+    const cancelled = await transaction.donation.updateMany({
+      where: { id: donationId, donorId, status: DonationStatus.AVAILABLE },
       data: { status: DonationStatus.CANCELLED },
+    })
+
+    if (cancelled.count !== 1) {
+      throw new ApiError(409, 'DONATION_NOT_CANCELLABLE', 'The donation is no longer available to cancel.')
+    }
+
+    await transaction.reservation.updateMany({
+      where: { donationId, status: ReservationStatus.PENDING },
+      data: {
+        status: ReservationStatus.REJECTED,
+        donorResponse: 'The donation was cancelled by the donor.',
+      },
+    })
+
+    return transaction.donation.findUnique({
+      where: { id: donationId },
       select: donationSelect,
     })
   })
+}
+
+export async function markDonationCollected(donorId, donationId) {
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      const existing = await transaction.donation.findFirst({
+        where: { id: donationId, donorId },
+        select: { status: true },
+      })
+
+      if (!existing) {
+        throw donationNotFound()
+      }
+
+      if (existing.status !== DonationStatus.RESERVED) {
+        throw new ApiError(
+          409,
+          'DONATION_NOT_COLLECTABLE',
+          'Only a reserved donation with one approved reservation can be marked as collected.',
+        )
+      }
+
+      const approvedReservations = await transaction.reservation.findMany({
+        where: { donationId, status: ReservationStatus.APPROVED },
+        select: { id: true },
+        take: 2,
+      })
+
+      if (approvedReservations.length !== 1) {
+        throw new ApiError(
+          409,
+          'APPROVED_RESERVATION_REQUIRED',
+          'A reserved donation must have exactly one approved reservation before collection.',
+        )
+      }
+
+      const donationUpdate = await transaction.donation.updateMany({
+        where: { id: donationId, donorId, status: DonationStatus.RESERVED },
+        data: { status: DonationStatus.COLLECTED },
+      })
+      const reservationUpdate = await transaction.reservation.updateMany({
+        where: {
+          id: approvedReservations[0].id,
+          donationId,
+          status: ReservationStatus.APPROVED,
+        },
+        data: { status: ReservationStatus.COMPLETED },
+      })
+
+      if (donationUpdate.count !== 1 || reservationUpdate.count !== 1) {
+        throw new ApiError(409, 'COLLECTION_CONFLICT', 'The collection state changed. Please refresh and try again.')
+      }
+
+      const [donation, reservation] = await Promise.all([
+        transaction.donation.findUnique({ where: { id: donationId }, select: donationSelect }),
+        transaction.reservation.findUnique({
+          where: { id: approvedReservations[0].id },
+          select: collectionReservationSelect,
+        }),
+      ])
+
+      return { donation, reservation }
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      maxWait: 5000,
+      timeout: 10000,
+    })
+  } catch (error) {
+    if (error?.code === 'P2034') {
+      throw new ApiError(409, 'COLLECTION_CONFLICT', 'The collection state changed. Please refresh and try again.')
+    }
+
+    throw error
+  }
 }

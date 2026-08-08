@@ -1,6 +1,6 @@
 # FoodLink
 
-FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the project foundation, MySQL database, authentication, organisation profiles, and donation CRUD/public browsing completed through Milestone 5.
+FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the project foundation, MySQL database, authentication, organisation profiles, donation CRUD/public browsing, and the reservation/collection workflow completed through Milestone 6.
 
 ## Prerequisites
 
@@ -239,3 +239,35 @@ npm run donation:smoke
 ```
 
 The donation smoke script removes all temporary records after verification.
+
+## Reservation and collection API
+
+Authenticated `RECIPIENT` endpoints:
+
+```text
+POST  /api/donations/:id/reservations
+GET   /api/reservations/mine
+PATCH /api/reservations/:id/cancel
+```
+
+Authenticated `DONOR` endpoints:
+
+```text
+GET   /api/donations/:id/reservations
+PATCH /api/reservations/:id/approve
+PATCH /api/reservations/:id/reject
+PATCH /api/donations/:id/collected
+```
+
+Reservation and donation ownership comes only from the authenticated user. Approval atomically changes one reservation to `APPROVED`, rejects competing pending reservations, and changes the donation to `RESERVED`. Collection atomically changes that reservation to `COMPLETED` and its donation to `COLLECTED`.
+
+Cancelling an available donation atomically changes its pending reservations to `REJECTED`. Recipient-initiated cancellation uses `CANCELLED` and is limited to the recipient's own pending reservation.
+
+With the API running, exercise the live request, listing, approval, and collection workflow:
+
+```bash
+cd server
+npm run reservation:smoke
+```
+
+The reservation smoke script removes all temporary users, organisations, donations, and reservations after verification.

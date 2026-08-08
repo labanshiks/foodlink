@@ -11,6 +11,7 @@
     "auth:smoke": "node scripts/smoke-auth-api.js",
     "organisation:smoke": "node scripts/smoke-organisation-api.js",
     "donation:smoke": "node scripts/smoke-donation-api.js",
+    "reservation:smoke": "node scripts/smoke-reservation-api.js",
     "test": "node --test --test-concurrency=1",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
