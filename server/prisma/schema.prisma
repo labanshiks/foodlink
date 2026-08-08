@@ -7,5 +7,127 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Database models will be added in Milestone 2.
+enum UserRole {
+  DONOR
+  RECIPIENT
+  ADMIN
+}
 
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum DonationStatus {
+  AVAILABLE
+  RESERVED
+  COLLECTED
+  CANCELLED
+}
+
+enum ReservationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id                  Int                  @id @default(autoincrement())
+  firstName           String               @map("first_name") @db.VarChar(50)
+  lastName            String               @map("last_name") @db.VarChar(50)
+  email               String               @unique @db.VarChar(255)
+  passwordHash        String               @map("password_hash") @db.VarChar(255)
+  phoneNumber         String               @map("phone_number") @db.VarChar(30)
+  role                UserRole
+  status              UserStatus           @default(ACTIVE)
+  createdAt           DateTime             @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.DateTime(0)
+  organisation        Organisation?
+  donations           Donation[]           @relation("DonorDonations")
+  reservations        Reservation[]        @relation("RecipientReservations")
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model Organisation {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique @map("user_id")
+  name             String   @db.VarChar(150)
+  organisationType String   @map("organisation_type") @db.VarChar(100)
+  description      String?  @db.Text
+  address          String   @db.VarChar(255)
+  city             String   @db.VarChar(100)
+  contactPhone     String   @map("contact_phone") @db.VarChar(30)
+  createdAt        DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@map("organisations")
+}
+
+model FoodCategory {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique @db.VarChar(100)
+  description String?    @db.Text
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.DateTime(0)
+  donations   Donation[]
+
+  @@map("food_categories")
+}
+
+model Donation {
+  id                     Int            @id @default(autoincrement())
+  donorId                Int            @map("donor_id")
+  categoryId             Int            @map("category_id")
+  title                  String         @db.VarChar(150)
+  description            String         @db.Text
+  quantity               Decimal        @db.Decimal(10, 2)
+  quantityUnit           String         @map("quantity_unit") @db.VarChar(30)
+  availableFrom          DateTime       @map("available_from") @db.DateTime(0)
+  expiresAt              DateTime       @map("expires_at") @db.DateTime(0)
+  collectionAddress      String         @map("collection_address") @db.VarChar(255)
+  city                   String         @db.VarChar(100)
+  collectionInstructions String?        @map("collection_instructions") @db.Text
+  imageUrl               String?        @map("image_url") @db.VarChar(500)
+  status                 DonationStatus @default(AVAILABLE)
+  createdAt              DateTime       @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt              DateTime       @updatedAt @map("updated_at") @db.DateTime(0)
+  donor                  User           @relation("DonorDonations", fields: [donorId], references: [id])
+  category               FoodCategory   @relation(fields: [categoryId], references: [id])
+  reservations           Reservation[]
+
+  @@map("donations")
+}
+
+model Reservation {
+  id                      Int               @id @default(autoincrement())
+  donationId              Int               @map("donation_id")
+  recipientId             Int               @map("recipient_id")
+  message                 String?           @db.Text
+  requestedCollectionTime DateTime          @map("requested_collection_time") @db.DateTime(0)
+  status                  ReservationStatus @default(PENDING)
+  donorResponse           String?           @map("donor_response") @db.Text
+  createdAt               DateTime          @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt               DateTime          @updatedAt @map("updated_at") @db.DateTime(0)
+  donation                Donation          @relation(fields: [donationId], references: [id])
+  recipient               User              @relation("RecipientReservations", fields: [recipientId], references: [id])
+
+  @@map("reservations")
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.DateTime(0)
+  usedAt    DateTime? @map("used_at") @db.DateTime(0)
+  createdAt DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@map("password_reset_tokens")
+}

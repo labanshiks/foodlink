@@ -7,15 +7,24 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "db:check": "node scripts/check-database.js",
-    "prisma:validate": "prisma validate"
+    "db:verify": "node scripts/verify-database.js",
+    "prisma:validate": "prisma validate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
+    "bcrypt": "6.0.0",
     "cors": "2.8.5",
     "dotenv": "16.4.7",
     "express": "4.22.2"
   },
   "devDependencies": {
     "prisma": "5.22.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }

@@ -1,6 +1,6 @@
 # FoodLink
 
-FoodLink is a three-tier surplus-food donation coordination web application. This repository currently contains the Milestone 1 project foundation only: a React/Vite frontend, an Express API, and Prisma configured for MySQL.
+FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the Milestone 1 foundation and the Milestone 2 MySQL database schema, migration, and development seed data.
 
 ## Prerequisites
 
@@ -47,7 +47,23 @@ GRANT ALL PRIVILEGES ON foodlink.* TO 'foodlink_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-Edit `server/.env` and replace `change_me` in `DATABASE_URL` with the password you selected. URL-encode special characters used in the username or password.
+Edit `server/.env` and replace `change_me` in `DATABASE_URL` with the password you selected. URL-encode special characters used in the username or password. Also set the development administrator credentials:
+
+```dotenv
+SEED_ADMIN_EMAIL="admin@foodlink.local"
+SEED_ADMIN_PASSWORD="replace_with_a_strong_development_password"
+```
+
+The administrator password must contain at least 12 characters. Keep `server/.env` local and never commit it.
+
+Apply the existing migrations and seed the development data:
+
+```bash
+cd server
+npx prisma migrate deploy
+npx prisma generate
+npx prisma db seed
+```
 
 ## Development
 
@@ -85,6 +101,11 @@ npm run db:check
 ```bash
 cd server
 npm run prisma:validate
+npm run prisma:generate
+npm run prisma:seed
+npm run db:verify
 ```
 
-Database models, migrations, and Prisma Client generation intentionally begin in Milestone 2.
+Use `npx prisma migrate dev --name <migration_name>` when creating future development migrations. Prisma's development migration command requires permission to create a temporary shadow database; applying committed migrations with `prisma migrate deploy` does not.
+
+The seed is idempotent: it upserts the seven standard food categories and one active administrator. The administrator has no organisation, as required by the project specification.
