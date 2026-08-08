@@ -1,6 +1,6 @@
 # FoodLink
 
-FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the project foundation, MySQL database, backend authentication and authorization, and organisation profiles completed through Milestone 4.
+FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the project foundation, MySQL database, authentication, organisation profiles, and donation CRUD/public browsing completed through Milestone 5.
 
 ## Prerequisites
 
@@ -195,3 +195,47 @@ npm run organisation:smoke
 ```
 
 The smoke script deletes its temporary donor and organisation records after verification.
+
+## Donation API
+
+Public endpoints:
+
+```text
+GET /api/donations
+GET /api/donations/:id
+```
+
+Authenticated `DONOR` endpoints:
+
+```text
+GET   /api/donations/mine
+POST  /api/donations
+PUT   /api/donations/:id
+PATCH /api/donations/:id/cancel
+```
+
+Public browsing supports:
+
+```text
+/api/donations?city=Nairobi
+/api/donations?category=1
+/api/donations?search=bread
+/api/donations?title=meals
+/api/donations?sort=expiry_asc
+/api/donations?sort=expiry_desc
+```
+
+Public listings contain only `AVAILABLE` donations with `expiresAt` greater than or equal to the current request time. Expiration is calculated during the query; there is no `EXPIRED` status or background job.
+
+Donation ownership always comes from the authenticated user. Client-supplied `donorId`, `donor_id`, `status`, IDs, or timestamp fields are rejected. New donations always start as `AVAILABLE`.
+
+Cancellation is the donation delete operation for CRUD purposes. It changes the status to `CANCELLED` without deleting the database row, is idempotent when repeated, and removes the donation from public listings. The donor `/mine` endpoint retains cancelled and expired history.
+
+With the API running, exercise the complete donation CRUD and public browsing flow:
+
+```bash
+cd server
+npm run donation:smoke
+```
+
+The donation smoke script removes all temporary records after verification.
