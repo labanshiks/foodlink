@@ -1,6 +1,25 @@
 # FoodLink
 
-FoodLink is a three-tier surplus-food donation coordination web application. The repository currently contains the project foundation, MySQL database, authentication, organisation profiles, donation CRUD/public browsing, and the reservation/collection workflow completed through Milestone 6.
+FoodLink is a complete three-tier surplus-food donation coordination web application. Donor organisations publish food that would otherwise go to waste, recipient organisations request collection, and administrators oversee platform activity. The project supports UN Sustainable Development Goal 2 (Zero Hunger) and Goal 12 (Responsible Consumption and Production).
+
+## Technology and architecture
+
+- React 18, Vite, React Router, Bootstrap, and Axios
+- Node.js and Express REST API with JWT authentication and role authorization
+- Prisma ORM with MySQL
+- bcrypt password hashing and hashed, time-limited password-reset tokens
+
+```text
+React browser client
+        |
+        | Axios / JSON / Bearer JWT
+        v
+Express REST API
+        |
+        | Prisma ORM
+        v
+MySQL database
+```
 
 ## Prerequisites
 
@@ -38,7 +57,20 @@ cd server
 copy .env.example .env
 ```
 
-On macOS or Linux, use `cp .env.example .env` instead. Create the local database and a dedicated application account while logged into MySQL as an administrator:
+Create the frontend environment file:
+
+```bash
+cd client
+copy .env.example .env
+```
+
+On macOS or Linux, use `cp .env.example .env`. The default development value is:
+
+```dotenv
+VITE_API_URL=http://localhost:5000/api
+```
+
+Create the local database and a dedicated application account while logged into MySQL as an administrator:
 
 ```sql
 CREATE DATABASE foodlink CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -54,6 +86,8 @@ JWT_SECRET="replace_with_at_least_32_random_characters"
 JWT_EXPIRES_IN="1h"
 SEED_ADMIN_EMAIL="admin@foodlink.local"
 SEED_ADMIN_PASSWORD="replace_with_a_strong_development_password"
+PASSWORD_RESET_EXPIRES_MINUTES=30
+PASSWORD_RESET_DELIVERY_MODE="none"
 ```
 
 Use a cryptographically random JWT secret containing at least 32 characters. The administrator password must contain at least 12 characters. Keep `server/.env` local and never commit it.
@@ -84,6 +118,8 @@ npm run dev
 ```
 
 The frontend defaults to <http://localhost:5173>. The API defaults to <http://localhost:5000>.
+
+The frontend uses the API URL from `VITE_API_URL`; production deployments should set this to the deployed API base URL rather than editing source files.
 
 Check the API:
 
@@ -201,9 +237,12 @@ The smoke script deletes its temporary donor and organisation records after veri
 Public endpoints:
 
 ```text
+GET /api/categories
 GET /api/donations
 GET /api/donations/:id
 ```
+
+The public category endpoint returns only active categories and exposes only `id`, `name`, `description`, and `active`. Administrators continue to use `/api/admin/categories` to see active and inactive categories with usage counts.
 
 Authenticated `DONOR` endpoints:
 
@@ -345,3 +384,68 @@ npm run password-reset:smoke
 ```
 
 The password-reset smoke script removes its temporary user, organisation, and reset-token records afterward.
+
+## React application
+
+The browser application provides these public routes:
+
+```text
+/
+/donations
+/donations/:id
+/login
+/register
+/forgot-password
+/reset-password
+```
+
+Authenticated donor routes are `/dashboard`, `/my-donations`, `/donations/new`, `/donations/:id/edit`, `/donations/:id/requests`, and `/profile`. Recipient routes are `/dashboard`, `/my-reservations`, and `/profile`. Administration routes begin with `/admin` and cover users, organisations, categories, and donations.
+
+The JWT is stored in browser local storage for this academic demonstration. Axios adds it to API requests automatically. At startup, the authentication provider verifies the token with `/api/auth/me`; invalid or expired tokens are removed. Roles are taken only from the verified API user, and route guards redirect unauthenticated or wrong-role navigation. Backend authentication and authorization remain authoritative.
+
+The interface uses a responsive Bootstrap navbar, grid, cards, table wrappers, forms, status badges, loading indicators, empty states, validation messages, and confirmation prompts. An `AVAILABLE` donation whose `expiresAt` is in the past is displayed as `EXPIRED` without changing its database status.
+
+For a local password-reset demonstration, start the backend with `NODE_ENV=development` and `PASSWORD_RESET_DELIVERY_MODE=response`. The API then exposes `X-FoodLink-Development-Reset-Token` through CORS and the forgot-password page shows a labelled development link. Production startup rejects response delivery and never exposes the raw token.
+
+## Roles
+
+- **DONOR:** maintains an organisation profile, creates and manages donations, reviews requests, and completes collection.
+- **RECIPIENT:** maintains an organisation profile, browses donations, requests collection, and tracks or cancels pending reservations.
+- **ADMIN:** views platform metrics and manages users, categories, organisations, and inappropriate available listings.
+
+## Quality checks
+
+Frontend checks:
+
+```bash
+cd client
+npm run lint
+npm run build
+```
+
+Backend regression and database checks:
+
+```bash
+cd server
+npm test
+npx prisma validate
+npm run db:check
+npm run db:verify
+```
+
+With a development API and frontend running at the URLs in `API_URL` and `FRONTEND_URL`, execute the cleanup-safe final integration scenario:
+
+```bash
+cd server
+npm run full-stack:smoke
+```
+
+## Demonstration workflow
+
+1. Green Spoon Restaurant logs in as a donor and creates **Surplus Chicken and Rice Meals** in Nairobi, with 25 meals available during a collection window covering approximately 4:00 PM to 7:00 PM.
+2. Hope Community Centre logs in as a recipient, filters Nairobi listings, opens the donation, and requests collection around 4:30 PM.
+3. The donor opens the listing's requests and approves Hope Community Centre. FoodLink reserves the donation and rejects other pending requests.
+4. The donor marks collection complete. The donation becomes `COLLECTED` and the approved reservation becomes `COMPLETED` atomically.
+5. The administrator reviews updated dashboard totals, users, organisations, categories, and donations.
+
+Demo user passwords should be supplied only through local development configuration. The seeded administrator email and password come from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`; no real credentials belong in source control.

@@ -15,6 +15,7 @@
     "dashboard:smoke": "node scripts/smoke-dashboard-api.js",
     "admin:smoke": "node scripts/smoke-admin-api.js",
     "password-reset:smoke": "node scripts/smoke-password-reset-api.js",
+    "full-stack:smoke": "node scripts/smoke-full-stack.js",
     "test": "node --test --test-concurrency=1",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",

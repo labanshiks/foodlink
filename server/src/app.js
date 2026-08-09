@@ -12,7 +12,14 @@ import reservationRoutes from './routes/reservationRoutes.js'
 
 const app = express()
 
-app.use(cors({ origin: env.clientUrl }))
+const exposedHeaders = (
+  env.nodeEnv !== 'production'
+  && env.passwordResetDeliveryMode === 'response'
+)
+  ? ['X-FoodLink-Development-Reset-Token']
+  : []
+
+app.use(cors({ origin: env.clientUrl, exposedHeaders }))
 app.use(express.json({ limit: '100kb' }))
 
 app.get('/api/health', (_request, response) => {

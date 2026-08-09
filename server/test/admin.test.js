@@ -418,6 +418,26 @@ describe('FoodLink administration API', { concurrency: false }, () => {
     assert.equal(response.body.data.categories.some((item) => item.id === ids.inactiveCategory && item.active === false), true)
   })
 
+  test('public category listing requires no authentication and returns active categories only', async () => {
+    const response = remember(await request(app).get('/api/categories'))
+
+    assert.equal(response.status, 200)
+    assert.equal(response.body.success, true)
+    assert.equal(response.body.data.categories.length > 0, true)
+    assert.equal(response.body.data.categories.every((item) => item.active === true), true)
+    assert.equal(response.body.data.categories.some((item) => item.id === ids.inactiveCategory), false)
+  })
+
+  test('public category listing exposes only safe category fields', async () => {
+    const response = remember(await request(app).get('/api/categories'))
+    const expectedFields = ['active', 'description', 'id', 'name']
+
+    assert.equal(response.status, 200)
+    assert.equal(response.body.data.categories.every((item) => (
+      JSON.stringify(Object.keys(item).sort()) === JSON.stringify(expectedFields)
+    )), true)
+  })
+
   test('ADMIN creates an active category by default', async () => {
     const response = remember(await request(app)
       .post('/api/categories')

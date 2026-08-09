@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { getActiveCategories } from '../controllers/categoryController.js'
 import {
   addCategory,
   editCategory,
@@ -17,6 +18,7 @@ import {
 
 const router = Router()
 
+router.get('/', asyncHandler(getActiveCategories))
 router.use(asyncHandler(authenticate), requireAdmin)
 router.post(
   '/',
