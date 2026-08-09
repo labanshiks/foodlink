@@ -14,6 +14,7 @@
     "reservation:smoke": "node scripts/smoke-reservation-api.js",
     "dashboard:smoke": "node scripts/smoke-dashboard-api.js",
     "admin:smoke": "node scripts/smoke-admin-api.js",
+    "password-reset:smoke": "node scripts/smoke-password-reset-api.js",
     "test": "node --test --test-concurrency=1",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",

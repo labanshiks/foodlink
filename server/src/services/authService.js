@@ -8,6 +8,10 @@ import { ApiError } from '../utils/apiError.js'
 const BCRYPT_ROUNDS = 12
 const DUMMY_PASSWORD_HASH = await bcrypt.hash('FoodLink invalid login timing value', BCRYPT_ROUNDS)
 
+export async function hashPassword(password) {
+  return bcrypt.hash(password, BCRYPT_ROUNDS)
+}
+
 export const publicUserSelect = {
   id: true,
   firstName: true,
@@ -53,7 +57,7 @@ export async function registerUser(input) {
   }
 
   const email = input.email.trim().toLowerCase()
-  const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS)
+  const passwordHash = await hashPassword(input.password)
 
   try {
     return await prisma.$transaction(async (transaction) => {

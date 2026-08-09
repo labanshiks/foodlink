@@ -321,3 +321,27 @@ npm run admin:smoke
 ```
 
 The administration smoke script removes all temporary records after verification.
+
+## Password reset API
+
+Public endpoints:
+
+```text
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+```
+
+Forgot-password responses are identical for existing, missing, active, and suspended accounts. Existing accounts receive a cryptographically random 32-byte token; MySQL stores only its SHA-256 hash. Tokens expire after `PASSWORD_RESET_EXPIRES_MINUTES` (30 minutes by default), and a newer request retires older unused tokens.
+
+Successful reset atomically replaces the bcrypt password hash, consumes the selected token, and retires other unused tokens for that user. A consumed or expired token cannot be reused.
+
+Production must use `PASSWORD_RESET_DELIVERY_MODE=none`; a future email provider should receive the raw token directly from the delivery helper and send a reset URL without persisting the token. Automated tests use an in-process development sink. The live smoke test explicitly starts a non-production API with `PASSWORD_RESET_DELIVERY_MODE=response`, which returns a same-shaped development-only header for existing and nonexistent addresses while leaving the JSON response generic.
+
+With that controlled development mode enabled on the API, run:
+
+```bash
+cd server
+npm run password-reset:smoke
+```
+
+The password-reset smoke script removes its temporary user, organisation, and reset-token records afterward.

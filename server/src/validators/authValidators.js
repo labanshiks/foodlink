@@ -3,6 +3,15 @@ import { body } from 'express-validator'
 const normalizeEmail = (value) => String(value).trim().toLowerCase()
 const normalizeRole = (value) => String(value).trim().toUpperCase()
 
+function passwordValidator(field = 'password') {
+  return body(field)
+    .isString().withMessage('Password is required.')
+    .isLength({ min: 8, max: 72 }).withMessage('Password must contain between 8 and 72 characters.')
+    .matches(/[a-z]/).withMessage('Password must contain a lowercase letter.')
+    .matches(/[A-Z]/).withMessage('Password must contain an uppercase letter.')
+    .matches(/[0-9]/).withMessage('Password must contain a number.')
+}
+
 export const registerValidator = [
   body('firstName')
     .trim()
@@ -20,12 +29,7 @@ export const registerValidator = [
     .trim()
     .notEmpty().withMessage('Phone number is required.')
     .isLength({ max: 30 }).withMessage('Phone number must not exceed 30 characters.'),
-  body('password')
-    .isString().withMessage('Password is required.')
-    .isLength({ min: 8, max: 72 }).withMessage('Password must contain between 8 and 72 characters.')
-    .matches(/[a-z]/).withMessage('Password must contain a lowercase letter.')
-    .matches(/[A-Z]/).withMessage('Password must contain an uppercase letter.')
-    .matches(/[0-9]/).withMessage('Password must contain a number.'),
+  passwordValidator(),
   body('role')
     .customSanitizer(normalizeRole)
     .isIn(['DONOR', 'RECIPIENT']).withMessage('Role must be DONOR or RECIPIENT.'),
@@ -61,4 +65,30 @@ export const loginValidator = [
   body('password')
     .isString().withMessage('Password is required.')
     .notEmpty().withMessage('Password is required.'),
+]
+
+export const forgotPasswordValidator = [
+  body('email')
+    .customSanitizer(normalizeEmail)
+    .isEmail().withMessage('A valid email address is required.')
+    .isLength({ max: 255 }).withMessage('Email must not exceed 255 characters.'),
+]
+
+export const resetPasswordValidator = [
+  body('token')
+    .isString().withMessage('Reset token is required.')
+    .bail()
+    .trim()
+    .matches(/^[a-f0-9]{64}$/i).withMessage('Reset token format is invalid.'),
+  passwordValidator(),
+  body('passwordConfirmation')
+    .isString().withMessage('Password confirmation is required.')
+    .bail()
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Password confirmation must match password.')
+      }
+
+      return true
+    }),
 ]

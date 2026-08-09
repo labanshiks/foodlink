@@ -1,4 +1,8 @@
 import { loginUser, registerUser } from '../services/authService.js'
+import {
+  requestPasswordReset,
+  resetPassword as resetUserPassword,
+} from '../services/passwordResetService.js'
 
 export async function register(request, response) {
   const user = await registerUser(request.body)
@@ -31,5 +35,27 @@ export function me(request, response) {
   return response.json({
     success: true,
     data: { user: request.user },
+  })
+}
+
+export async function forgotPassword(request, response) {
+  const result = await requestPasswordReset(request.body.email)
+
+  if (result.responseToken) {
+    response.set('X-FoodLink-Development-Reset-Token', result.responseToken)
+  }
+
+  return response.json({
+    success: true,
+    data: { message: result.message },
+  })
+}
+
+export async function resetPassword(request, response) {
+  const result = await resetUserPassword(request.body.token, request.body.password)
+
+  return response.json({
+    success: true,
+    data: result,
   })
 }
