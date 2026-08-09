@@ -187,10 +187,12 @@ export async function updateDonation(donorId, donationId, input) {
   })
 }
 
-export async function cancelDonation(donorId, donationId) {
+async function cancelDonationWithScope(scope, cancellationReason) {
+  const donationId = scope.id
+
   return prisma.$transaction(async (transaction) => {
     const existing = await transaction.donation.findFirst({
-      where: { id: donationId, donorId },
+      where: scope,
       select: { status: true },
     })
 
@@ -203,7 +205,7 @@ export async function cancelDonation(donorId, donationId) {
         where: { donationId, status: ReservationStatus.PENDING },
         data: {
           status: ReservationStatus.REJECTED,
-          donorResponse: 'The donation was cancelled by the donor.',
+          donorResponse: cancellationReason,
         },
       })
 
@@ -218,7 +220,7 @@ export async function cancelDonation(donorId, donationId) {
     }
 
     const cancelled = await transaction.donation.updateMany({
-      where: { id: donationId, donorId, status: DonationStatus.AVAILABLE },
+      where: { ...scope, status: DonationStatus.AVAILABLE },
       data: { status: DonationStatus.CANCELLED },
     })
 
@@ -230,7 +232,7 @@ export async function cancelDonation(donorId, donationId) {
       where: { donationId, status: ReservationStatus.PENDING },
       data: {
         status: ReservationStatus.REJECTED,
-        donorResponse: 'The donation was cancelled by the donor.',
+        donorResponse: cancellationReason,
       },
     })
 
@@ -239,6 +241,20 @@ export async function cancelDonation(donorId, donationId) {
       select: donationSelect,
     })
   })
+}
+
+export async function cancelDonation(donorId, donationId) {
+  return cancelDonationWithScope(
+    { id: donationId, donorId },
+    'The donation was cancelled by the donor.',
+  )
+}
+
+export async function cancelDonationAsAdmin(donationId) {
+  return cancelDonationWithScope(
+    { id: donationId },
+    'The donation was cancelled by a FoodLink administrator.',
+  )
 }
 
 export async function markDonationCollected(donorId, donationId) {

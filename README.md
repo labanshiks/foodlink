@@ -292,3 +292,32 @@ npm run dashboard:smoke
 ```
 
 The dashboard smoke script removes its temporary users, organisations, donations, and reservations after verification.
+
+## Administration API
+
+All administration endpoints require an authenticated `ADMIN` account.
+
+```text
+GET   /api/admin/users
+PATCH /api/admin/users/:id/status
+GET   /api/admin/organisations
+GET   /api/admin/categories
+POST  /api/categories
+PUT   /api/categories/:id
+PATCH /api/categories/:id/status
+GET   /api/admin/donations
+PATCH /api/admin/donations/:id/cancel
+```
+
+User listings support role, status, and name/email search filters. Organisation listings support role, city, and search filters. Donation listings support status, city, category, donor, expiry, search, and ordering filters.
+
+Categories are enabled or disabled without deleting rows, preserving donation history. Administrative donation cancellation is logical, is limited to `AVAILABLE` donations, and atomically rejects pending reservation requests with an administration reason.
+
+With the API running, exercise the complete backend administration flow:
+
+```bash
+cd server
+npm run admin:smoke
+```
+
+The administration smoke script removes all temporary records after verification.

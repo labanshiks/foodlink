@@ -13,6 +13,7 @@
     "donation:smoke": "node scripts/smoke-donation-api.js",
     "reservation:smoke": "node scripts/smoke-reservation-api.js",
     "dashboard:smoke": "node scripts/smoke-dashboard-api.js",
+    "admin:smoke": "node scripts/smoke-admin-api.js",
     "test": "node --test --test-concurrency=1",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
