@@ -33,8 +33,7 @@ MySQL database
 foodlink/
 |-- client/   React + Vite + Bootstrap
 |-- server/   Express + Prisma + MySQL
-|-- docs/     Architecture, ERD, and screenshot placeholders
-|-- PROJECT_SPEC.md
+|-- docs/     System diagrams and user-interface screenshots
 `-- README.md
 ```
 
