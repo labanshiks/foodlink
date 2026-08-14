@@ -1,4 +1,4 @@
-﻿# FoodLink
+# FoodLink
 
 FoodLink is a complete three-tier surplus-food donation coordination web application. Donor organisations publish food that would otherwise go to waste, recipient organisations request collection, and administrators oversee platform activity. The project supports UN Sustainable Development Goal 2 (Zero Hunger) and Goal 12 (Responsible Consumption and Production).
 
@@ -33,7 +33,9 @@ MySQL database
 foodlink/
 |-- client/   React + Vite + Bootstrap
 |-- server/   Express + Prisma + MySQL
-|-- docs/     System diagrams and user-interface screenshots`r`n`-- README.md
+|-- docs/     Architecture, ERD, and screenshot placeholders
+|-- PROJECT_SPEC.md
+`-- README.md
 ```
 
 ## Setup
@@ -174,7 +176,7 @@ Registration accepts `DONOR` and `RECIPIENT` only and requires this JSON structu
 }
 ```
 
-Passwords must contain 8â€“72 characters, including an uppercase letter, lowercase letter, and number. Passwords are stored as bcrypt hashes using 12 rounds.
+Passwords must contain 8–72 characters, including an uppercase letter, lowercase letter, and number. Passwords are stored as bcrypt hashes using 12 rounds.
 
 Successful login returns a signed bearer token. Send it to protected endpoints as:
 
@@ -447,4 +449,3 @@ npm run full-stack:smoke
 5. The administrator reviews updated dashboard totals, users, organisations, categories, and donations.
 
 Demo user passwords should be supplied only through local development configuration. The seeded administrator email and password come from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`; no real credentials belong in source control.
-
