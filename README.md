@@ -83,7 +83,7 @@ PASSWORD_RESET_EXPIRES_MINUTES=30
 PASSWORD_RESET_DELIVERY_MODE="none"
 ```
 
-Use a cryptographically random JWT secret containing at least 32 characters. The administrator password must contain at least 12 characters. Keep `server/.env` local and never commit it.
+Use a cryptographically random JWT secret containing at least 32 characters. The administrator password must contain at least 12 characters.
 
 Apply the existing migrations and seed the development data:
 
