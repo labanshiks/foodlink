@@ -10,8 +10,6 @@ This directory contains the design documentation and user-interface evidence for
 - [Donation and Reservation Sequence Diagram](diagrams/foodlink-sequence.png)
 - [Donation Workflow Diagram](diagrams/foodlink-workflow.png)
 
-Editable Draw.io versions are stored in the same directory.
-
 ## User Interface Screenshots
 
 - [Home Page](screenshots/01-home.png)
